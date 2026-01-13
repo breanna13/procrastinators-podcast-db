@@ -53,18 +53,21 @@ const root = {
   },
 
   episodes: async ({ hostIds, matchAll }) => {
+    console.log('🔧 Backend received:', { hostIds, matchAll });
+    
     let query;
     let params = [];
-
+  
     if (!hostIds || hostIds.length === 0) {
-      // Return all episodes
+      console.log('📋 Mode: SHOW ALL EPISODES');
       query = `
         SELECT DISTINCT e.* 
         FROM episodes e
         ORDER BY e.episode_number DESC, e.id DESC
       `;
-    } else if (matchAll) {
-      // Episodes that have ALL specified hosts
+    } else if (matchAll === true) {
+      console.log('📋 Mode: EXCLUSIVE (checkbox checked)');
+      // EXCLUSIVE: Episodes with EXACTLY these hosts and no one else
       query = `
         SELECT e.* 
         FROM episodes e
@@ -84,19 +87,26 @@ const root = {
       `;
       params = [hostIds, hostIds.length];
     } else {
-      // Episodes that have ANY of the specified hosts
+      console.log('📋 Mode: CONTAINS ALL (default, checkbox unchecked)');
+      // DEFAULT: Episodes that have ALL specified hosts (may have others too)
       query = `
-        SELECT DISTINCT e.* 
+        SELECT e.* 
         FROM episodes e
-        INNER JOIN episode_hosts eh ON e.id = eh.episode_id
-        WHERE eh.host_id = ANY($1)
+        WHERE (
+          SELECT COUNT(DISTINCT eh.host_id)
+          FROM episode_hosts eh
+          WHERE eh.episode_id = e.id
+          AND eh.host_id = ANY($1)
+        ) = $2
         ORDER BY e.episode_number DESC, e.id DESC
       `;
-      params = [hostIds];
+      params = [hostIds, hostIds.length];
     }
-
+  
+    console.log('🔎 Query params:', params);
     const result = await pool.query(query, params);
-
+    console.log('✅ Found', result.rows.length, 'episodes');
+    
     // Fetch hosts for each episode
     const episodes = await Promise.all(
       result.rows.map(async (episode) => {
@@ -111,11 +121,11 @@ const root = {
           ...episode,
           episodeNumber: episode.episode_number,
           releaseDate: episode.release_date,
-          hosts: hostsResult.rows,
+          hosts: hostsResult.rows
         };
       })
     );
-
+  
     return episodes;
   },
 
