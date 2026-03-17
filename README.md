@@ -96,6 +96,19 @@ The React app will open at http://localhost:3000
 
 ### GraphQL errors
 - Check the GraphiQL interface at http://localhost:4000/graphql for detailed error messages
+  
+```
+# On any new computer:
+git clone https://github.com/breanna13/procrastinators-podcast-db.git
+cd procrastinators-podcast-db
+brew install postgresql@14
+brew services start postgresql@14
+createdb procrastinators_podcast
+psql procrastinators_podcast < database_dump.sql
+npm install
+cd client && npm install && cd ..
+npm start  # Terminal 1
+cd client && npm start  # Terminal 2
 ```
 
 ## License
