@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Host, Episode, FilterState } from "./types";
 import { fetchHosts, fetchEpisodes } from "./api";
 
@@ -14,9 +14,6 @@ function App() {
 
   useEffect(() => {
     loadHosts();
-  }, []);
-
-  useEffect(() => {
     loadEpisodes();
   }, []);
 
@@ -25,7 +22,7 @@ function App() {
       const hostsData = await fetchHosts();
       setHosts(hostsData);
     } catch (err) {
-      setError("Failed to load hosts");
+      setError(err instanceof Error ? err.message : "Failed to load hosts");
     }
   }
 
@@ -36,7 +33,9 @@ function App() {
       setEpisodes(episodesData);
       setError(null);
     } catch (err) {
-      setError("Failed to load episodes");
+      setError(err instanceof Error ? err.message : "Failed to load episodes");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -73,19 +72,15 @@ function App() {
       setEpisodes(episodesData);
       setError(null);
     } catch (err) {
-      setError("Failed to search episodes");
+      setError(
+        err instanceof Error ? err.message : "Failed to search episodes"
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
-  function handleClearAll() {
-    setFilterState({
-      selectedHostIds: [],
-      matchAll: false,
-    });
-    setEpisodes([]);
-  }
-
-  function handleShowAll() {
+  function handleClearFilters() {
     setFilterState({
       selectedHostIds: [],
       matchAll: false,
@@ -94,149 +89,157 @@ function App() {
   }
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1>The Procrastinators Podcast DB Tool</h1>
-
-      {error && (
-        <div
-          style={{
-            backgroundColor: "#ffebee",
-            color: "#c62828",
-            padding: "10px",
-            marginBottom: "20px",
-            border: "1px solid #c62828",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <div
-        style={{
-          marginBottom: "30px",
-          border: "1px solid #ccc",
-          padding: "20px",
-        }}
-      >
-        <h2>Hosts</h2>
-
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", marginBottom: "10px" }}>
-            <input
-              type="checkbox"
-              checked={filterState.matchAll}
-              onChange={handleMatchAllChange}
-              style={{ marginRight: "8px" }}
-            />
-            <strong>Exact Match</strong>
-            <div
-              style={{ fontSize: "0.9em", color: "#666", marginLeft: "24px" }}
-            >
-              (Show only episodes with exactly the selected hosts)
-            </div>
-          </label>
+    <div className="min-h-screen p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <img
+            src="/tpc_logo.jpeg"
+            alt="The Procrastinators Podcast"
+            className="mx-auto w-64 h-auto drop-shadow-2xl rounded-lg"
+          />
+          <p className="text-white text-xl mt-4 font-semibold drop-shadow-lg">
+            <a href="https://youtu.be/XzWcameJDow?si=BlEJ_aby5haFunri&t=69">
+              DATABASE!!! DATABASE!!!!!
+            </a>
+          </p>
         </div>
 
-        <div style={{ marginBottom: "15px" }}>
-          <strong>Select Hosts:</strong>
-          <div style={{ marginTop: "10px" }}>
-            {hosts.map((host) => (
-              <label
-                key={host.id}
-                style={{
-                  display: "block",
-                  marginBottom: "8px",
-                  padding: "5px",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={filterState.selectedHostIds.includes(host.id)}
-                  onChange={() => handleHostCheckboxChange(host.id)}
-                  style={{ marginRight: "8px" }}
-                />
-                {host.name}
-              </label>
-            ))}
+        {/* Error Alert */}
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
           </div>
-        </div>
+        )}
 
-        <div>
-          <button
-            onClick={handleSearch}
-            style={{
-              padding: "10px 20px",
-              fontSize: "16px",
-              marginRight: "10px",
-              cursor: "pointer",
-            }}
-          >
-            Search
-          </button>
-          <button
-            onClick={handleClearAll}
-            style={{
-              padding: "10px 20px",
-              fontSize: "16px",
-              marginRight: "10px",
-              cursor: "pointer",
-            }}
-          >
-            Clear All
-          </button>
-          <button
-            onClick={handleShowAll}
-            style={{
-              padding: "10px 20px",
-              fontSize: "16px",
-              marginRight: "10px",
-              cursor: "pointer",
-            }}
-          >
-            Show All
-          </button>
-        </div>
-      </div>
+        {/* Filter Section */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 mb-8">
+          <h2 className="text-2xl font-bold text-pcp-dark mb-6">
+            Filter by Hosts
+          </h2>
 
-      <div>
-        <h2>Episodes ({episodes.length})</h2>
-
-        {
-          <div>
-            {episodes.map((episode) => (
-              <div
-                key={episode.id}
-                style={{
-                  border: "1px solid #ddd",
-                  padding: "15px",
-                  marginBottom: "15px",
-                }}
-              >
-                <h3>{episode.title}</h3>
-
-                {episode.description && (
-                  <p style={{ color: "#555" }}>{episode.description}</p>
-                )}
-
-                {episode.releaseDate && (
-                  <p style={{ fontSize: "0.9em", color: "#666" }}>
-                    Date: {episode.releaseDate}
-                  </p>
-                )}
-
-                <div style={{ marginTop: "10px" }}>
-                  <strong>Hosts: </strong>
-                  {episode.hosts.map((host, index) => (
-                    <span key={host.id}>
-                      {host.name}
-                      {index < episode.hosts.length - 1 && ", "}
-                    </span>
-                  ))}
-                </div>
+          {/* Exclusive Mode Toggle */}
+          <div className="mb-6">
+            <label className="flex items-start space-x-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={filterState.matchAll}
+                onChange={handleMatchAllChange}
+                className="mt-1 w-5 h-5 text-pcp-purple rounded focus:ring-pcp-blue"
+              />
+              <div>
+                <span className="font-semibold text-pcp-dark group-hover:text-pcp-purple transition">
+                  Exclusive mode (ONLY selected hosts)
+                </span>
+                <p className="text-sm text-gray-600 mt-1">
+                  {filterState.matchAll
+                    ? "Shows ONLY episodes with exactly these hosts and no one else"
+                    : "Shows episodes where all selected hosts appear together (may include others)"}
+                </p>
               </div>
-            ))}
+            </label>
           </div>
-        }
+
+          {/* Host Checkboxes */}
+          <div className="mb-6">
+            <p className="font-semibold text-pcp-dark mb-3">Select Hosts:</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {hosts.map((host) => (
+                <label
+                  key={host.id}
+                  className="flex items-center space-x-2 p-3 rounded-lg hover:bg-pcp-coral/20 cursor-pointer transition group"
+                >
+                  <input
+                    type="checkbox"
+                    checked={filterState.selectedHostIds.includes(host.id)}
+                    onChange={() => handleHostCheckboxChange(host.id)}
+                    className="w-4 h-4 text-pcp-purple rounded focus:ring-pcp-blue"
+                  />
+                  <span className="text-pcp-dark group-hover:text-pcp-purple transition font-medium">
+                    {host.name}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4">
+            <button
+              onClick={handleSearch}
+              className="px-6 py-3 bg-gradient-to-r from-pcp-purple to-pcp-blue text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition"
+            >
+              Search
+            </button>
+            <button
+              onClick={handleClearFilters}
+              className="px-6 py-3 bg-pcp-gray text-white font-semibold rounded-lg hover:bg-pcp-dark transition"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Episodes Section */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+          <h2 className="text-2xl font-bold text-pcp-dark mb-6">
+            Episodes ({episodes.length})
+          </h2>
+
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-pcp-purple border-t-transparent"></div>
+            </div>
+          ) : episodes.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg">No episodes found.</p>
+              <p className="text-sm mt-2">
+                Try adjusting your filters or add some episodes!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {episodes.map((episode) => (
+                <div
+                  key={episode.id}
+                  className="border-l-4 border-pcp-purple bg-gradient-to-r from-white to-pcp-coral/10 p-6 rounded-lg hover:shadow-lg transition"
+                >
+                  <h3 className="text-xl font-bold text-pcp-dark mb-2">
+                    {episode.episodeNumber && (
+                      <span className="text-pcp-purple">
+                        Episode {episode.episodeNumber}:{" "}
+                      </span>
+                    )}
+                    {episode.title}
+                  </h3>
+
+                  {episode.description && (
+                    <p className="text-gray-700 mb-3">{episode.description}</p>
+                  )}
+
+                  {episode.releaseDate && (
+                    <p className="text-sm text-gray-500 mb-3">
+                      📅 Released: {episode.releaseDate}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    <span className="font-semibold text-pcp-dark">Hosts:</span>
+                    {episode.hosts.map((host, index) => (
+                      <span
+                        key={host.id}
+                        className="px-3 py-1 bg-pcp-purple/20 text-pcp-purple rounded-full text-sm font-medium"
+                      >
+                        {host.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
