@@ -133,9 +133,7 @@ function App() {
                   Exclusive mode (ONLY selected hosts)
                 </span>
                 <p className="text-sm text-gray-600 mt-1">
-                  {filterState.matchAll
-                    ? "Shows ONLY episodes with exactly these hosts and no one else"
-                    : "Shows episodes where all selected hosts appear together (may include others)"}
+                  Shows ONLY episodes with exactly these hosts and no one else
                 </p>
               </div>
             </label>
